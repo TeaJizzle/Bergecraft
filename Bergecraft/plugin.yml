@@ -1,0 +1,14 @@
+name: Bergecraft
+version: 0.1
+author: valadian
+main: com.valadian.bergecraft.Bergecraft
+dev-url: null
+commands:
+  bergecraft:
+    description: Gets and sets Bergecraft settings
+    usage: /bergecraft <setting> [<value>]
+    permission: bergecraft.console
+permissions:
+  bergecraft.console:
+    description: Console commands for Bergecraft
+    default: false
