@@ -2,6 +2,7 @@ name: Bergecraft
 version: 0.1
 author: valadian
 main: com.valadian.bergecraft.Bergecraft
+depends: [GimmickAPI]
 dev-url: null
 commands:
   bergecraft:

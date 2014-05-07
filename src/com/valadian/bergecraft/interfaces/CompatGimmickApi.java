@@ -19,7 +19,7 @@ public class CompatGimmickApi implements IDisabler{
 	@Override
 	public boolean isBergecraftDisabledFor(Player player) {
 		// TODO Auto-generated method stub
-		String pvpmode = Bergecraft.config_.get("gimmick_api_pvpmode").getString();
+		String pvpmode = "bergecraft"; //Bergecraft.config_.get("gimmick_api_pvpmode").getString();
 		return isEnabled() && !pvpmode.equals(GimmickAPI.getPvpModeForPlayer(player));
 	}
 }

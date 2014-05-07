@@ -25,6 +25,8 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -34,6 +36,10 @@ import org.bukkit.potion.PotionEffectType;
 import com.valadian.bergecraft.annotations.*;
 import com.valadian.bergecraft.bergeypvp.WeaponTimer;
 import com.valadian.bergecraft.interfaces.ApiManager;
+
+import com.gimmicknetwork.gimmickapi.PlayerLeavePvpModeEvent;
+import com.gimmicknetwork.gimmickapi.PlayerJoinPvpModeEvent;
+
 
 public class Bergecraft extends JavaPlugin implements Listener  {
 	public static void severe(String message) {
@@ -67,7 +73,44 @@ public class Bergecraft extends JavaPlugin implements Listener  {
     
 
     HashMap<Player,WeaponTimer> cooldowns = new HashMap<Player,WeaponTimer>();
-
+    
+    //handle players changing pvp mode FROM bergecraft
+    @EventHandler(priority = EventPriority.LOW)
+    public void onPlayerLeavePvpMode(PlayerLeavePvpModeEvent event) {
+    	Player player = event.getPlayer();
+    	String oldMode = event.getOldPvpMode();
+    	String newMode = event.getNewPvpMode();
+    	//player switched from bergecraft
+    	if (oldMode.equals("bergecraft") && !newMode.equals("bergecraft")) {
+    		resetMaxHealth(player);
+    		getLogger().info(player.getName()+" has left bergecraft mode, their max health has been reset.");
+    	}
+    }
+    
+        
+    //handle players changing pvp mode TO bergecraft
+    @EventHandler(priority = EventPriority.LOW)
+    public void onPlayerJoinPvpMode(PlayerJoinPvpModeEvent event) {
+    	Player player = event.getPlayer();
+    	String oldMode = event.getOldPvpMode();
+    	String newMode = event.getNewPvpMode();
+    	//player switched from bergecraft
+    	if (newMode.equals("bergecraft") && !oldMode.equals("bergecraft")) {
+    		setMaxHealth(player);
+    		getLogger().info(player.getName()+" has joined bergecraft mode, their max health has been set.");
+    	}
+    }
+     
+    
+    @EventHandler(priority = EventPriority.LOW)
+    public void onTeleport(PlayerTeleportEvent event) {
+    	TeleportCause cause = event.getCause();
+        if (cause.equals(TeleportCause.ENDER_PEARL) && !apis.isBergecraftDisabledFor(event.getPlayer()) ) {
+        	event.setCancelled(true);
+        	event.getPlayer().sendMessage("Ender pearls are disabled in Bergecraft PVP mode.");
+        }
+    }
+    
     @Bergifications ({
 	    @Bergification(opt="bergey_pvp_weapons", def="true"),
 	    @Bergification(opt="bergey_pvp_weapon_cooldown", def="3000",type=OptType.Int),
@@ -308,8 +351,9 @@ public class Bergecraft extends JavaPlugin implements Listener  {
     	@Bergification(opt="bergey_health_bonus_50_perc_durability", def="850",type=OptType.Double)
     })
 	public void setMaxHealth(Player player){
-
-    	if(apis.isBergecraftDisabledFor(player)) return;
+    	if(apis.isBergecraftDisabledFor(player)) {  		
+    		return;
+    	}
         if (!config_.get("bergey_health").getBool()) {
           return;
         }
@@ -332,13 +376,26 @@ public class Bergecraft extends JavaPlugin implements Listener  {
  	    }
 	}
     
+	public void resetMaxHealth(Player player){
+		double maxHealth = 20.0d;
+ 	    if(maxHealth != ((Damageable) player).getMaxHealth()){
+			debug("Setting Player: "+player.getName()+" to "+maxHealth+" health");
+			if(((Damageable)player).getHealth()>maxHealth)
+			{
+				player.setHealth(maxHealth);
+			}
+			player.setMaxHealth(maxHealth);
+ 	    }
+	}
+    
+    
+    
     public boolean onCommand(
         CommandSender sender,
         Command command,
         String label,
         String[] args) {
-      if (!(sender instanceof ConsoleCommandSender) ||
-          !command.getName().equals("bergecraft") ||
+      if (!command.getName().equals("bergecraft") ||
           args.length < 1) {
         return false;
       }
